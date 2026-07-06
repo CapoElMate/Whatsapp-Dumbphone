@@ -153,9 +153,26 @@ router.get('/chat/:id', checkAuth, async (req, res) => {
         <form action="/send${tp}" method="post" style="padding:4px;margin:0;">
             <input type="hidden" name="to" value="${escapeHtml(req.params.id)}">
             ${tokenField}
-            <input type="text" name="msg" style="width:140px;">
+            <input id="msg" type="text" name="msg" style="width:140px;">
             <input type="submit" value="OK">
-        </form><br><br></body></html>`;
+        </form><br><br>
+        <script>
+            function focusMessageInput() {
+                var input = document.getElementById('msg');
+                if (input) input.focus();
+            }
+            function scrollToBottom() {
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+            function prepareChat() {
+                scrollToBottom();
+                focusMessageInput();
+            }
+            prepareChat();
+            window.onload = prepareChat;
+            setTimeout(prepareChat, 500);
+        </script>
+        </body></html>`;
 
         res.send(html);
     } catch (e) {

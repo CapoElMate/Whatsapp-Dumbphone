@@ -124,10 +124,10 @@ router.get('/chat/:id', checkAuth, async (req, res) => {
         }
 
         const t = req.query.token || req.session.token;
-        const tokenField = t ? `<input type="hidden" name="token" value="${t}">` : '';
+        const tokenField = t ? `<input type="hidden" name="token" value="${escapeHtml(t)}">` : '';
         html += `</div><hr>
-        <form action="/send" method="post" style="padding:4px;margin:0;">
-            <input type="hidden" name="to" value="${req.params.id}">
+        <form action="/send${tp}" method="post" style="padding:4px;margin:0;">
+            <input type="hidden" name="to" value="${escapeHtml(req.params.id)}">
             ${tokenField}
             <input type="text" name="msg" style="width:140px;">
             <input type="submit" value="OK">

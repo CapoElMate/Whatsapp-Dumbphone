@@ -60,7 +60,7 @@ echo.
 echo *** Nokia Bookmark URL ***
 echo Save this URL as a bookmark on your Nokia for password-free access:
 echo.
-echo   http://[your-server-ip]:3000/?token=!DISPLAY_TOKEN!
+echo   http://[your-server-ip]:40001/?token=!DISPLAY_TOKEN!
 echo.
 echo Replace [your-server-ip] with the actual IP or hostname.
 echo If using Cloudflare Tunnel, replace the whole host part with your tunnel domain.

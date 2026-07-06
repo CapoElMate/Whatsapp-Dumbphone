@@ -55,7 +55,7 @@ def setup_env():
         print(f".env configuration saved.")
         print(f"\n*** Nokia Bookmark URL ***")
         print(f"Bookmark this URL on your Nokia for password-free access:")
-        print(f"  http://[your-server-ip]:3000/?token={access_token}\n")
+        print(f"  http://[your-server-ip]:40001/?token={access_token}\n")
 
 def install_dependencies():
     print("Installing Node dependencies...")

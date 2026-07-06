@@ -59,7 +59,7 @@ Usage
 
 1.  **Scan**: Scan the displayed QR code with your primary WhatsApp device.
 
-2.  **Access**: Navigate to `http://[server-ip]:3000` on your legacy device's browser.
+2.  **Access**: Navigate to `http://[server-ip]:40001` on your legacy device's browser.
 
 3.  **Login**: Enter the PASSWORD defined in your .env file — or use the Nokia bookmark URL (see below).
 
@@ -70,7 +70,7 @@ Nokia Bookmark URL (password-free access)
 When you run `start.bat` or `start.sh`, the script automatically generates a secret access token and prints a ready-to-use bookmark URL at the end, like this:
 
 ```
-http://[your-server-ip]:3000/?token=e887b0f2e9c76a9b51b16b584efdc813
+http://[your-server-ip]:40001/?token=e887b0f2e9c76a9b51b16b584efdc813
 ```
 
 **Save this URL as a bookmark on your Nokia.** Opening it skips the login screen entirely — no password to type. Every link inside the gateway (chat list, back button, send form) automatically keeps the token in the URL, so you stay logged in as you navigate.

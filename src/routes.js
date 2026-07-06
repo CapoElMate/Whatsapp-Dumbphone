@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { checkAuth, loginLimiter, tokenParam, PASSWORD } = require('./auth');
+const { checkAuth, loginLimiter, tokenParam, PASSWORD, requireTokenAuth } = require('./auth');
 const client = require('./whatsapp');
 
 const parseLimit = (value, fallback, max) => {
@@ -33,6 +33,12 @@ const loadingPage = (req, message) => {
 };
 
 const isNotReadyError = (error) => error && error.code === 'WHATSAPP_NOT_READY';
+
+const findMessageInChat = async (chatId, messageId) => {
+    const chat = await client.withGatewayReady(() => client.getChatById(chatId));
+    const messages = await chat.fetchMessages({ limit: Math.max(MESSAGE_HISTORY_LIMIT, 100) });
+    return messages.find(message => message.id && message.id._serialized === messageId);
+};
 
 router.post('/login', loginLimiter, (req, res) => {
     if (req.body.pw === PASSWORD) {
@@ -96,6 +102,7 @@ router.get('/chat/:id', checkAuth, async (req, res) => {
             const bg = m.fromMe ? '#dcf8c6' : '#ffffff';
             const date = new Date(m.timestamp * 1000);
             const timeStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+            const messageId = m.id && m.id._serialized;
 
             let senderHtml = '';
             if (!m.fromMe && chat.isGroup) {
@@ -111,7 +118,24 @@ router.get('/chat/:id', checkAuth, async (req, res) => {
             let mediaHtml = '';
             if (m.hasMedia) {
                 const types = { image: 'Image', sticker: 'Sticker', video: 'Video', audio: 'Audio', ptt: 'Audio', document: 'Document' };
-                mediaHtml = `<div style="font-size:11px;color:#555;font-style:italic;margin-bottom:2px;">[${types[m.type] || 'Media'}]</div>`;
+                if (m.type === 'image' && messageId) {
+                    try {
+                        const media = await m.downloadMedia();
+                        const imageSrc = `data:${media.mimetype};base64,${media.data}`;
+                        const imageUrl = `/media/${encodeURIComponent(chat.id._serialized)}/${encodeURIComponent(messageId)}${tp}`;
+                        mediaHtml = `<div style="margin-bottom:2px;">
+                            <a href="${imageUrl}" style="display:block;text-decoration:none;">
+                                <img src="${imageSrc}" alt="Image" style="max-width:140px;max-height:140px;display:block;border:1px solid #bbb;border-radius:4px;">
+                            </a>
+                            <a href="${imageUrl}" style="display:inline-block;font-size:11px;color:#128C7E;font-weight:bold;margin-top:2px;">Abrir imagen</a>
+                        </div>`;
+                    } catch (e) {
+                        console.error(e);
+                        mediaHtml = `<div style="font-size:11px;color:#555;font-style:italic;margin-bottom:2px;">[${types[m.type] || 'Media'}]</div>`;
+                    }
+                } else {
+                    mediaHtml = `<div style="font-size:11px;color:#555;font-style:italic;margin-bottom:2px;">[${types[m.type] || 'Media'}]</div>`;
+                }
             }
 
             html += `<div style="text-align:${align};margin-bottom:5px;">
@@ -134,6 +158,33 @@ router.get('/chat/:id', checkAuth, async (req, res) => {
         </form><br><br></body></html>`;
 
         res.send(html);
+    } catch (e) {
+        if (isNotReadyError(e)) return res.send(loadingPage(req, e.message));
+        console.error(e);
+        res.send('Error: ' + escapeHtml(e.message) + ' <br><a href="/">Back</a>');
+    }
+});
+
+router.get('/media/:chatId/:messageId', requireTokenAuth, async (req, res) => {
+    try {
+        const message = await findMessageInChat(req.params.chatId, req.params.messageId);
+        if (!message || !message.hasMedia || message.type !== 'image') {
+            return res.send('Imagen no encontrada. <br><a href="' + '/chat/' + encodeURIComponent(req.params.chatId) + tokenParam(req) + '">Volver</a>');
+        }
+
+        const media = await message.downloadMedia();
+        const backUrl = `/chat/${encodeURIComponent(req.params.chatId)}${tokenParam(req)}`;
+        const imageSrc = `data:${media.mimetype};base64,${media.data}`;
+
+        res.send(`<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+        <body style="margin:0;background:#000;color:#fff;font-family:sans-serif;">
+        <div style="padding:8px;background:#25D366;color:#000;">
+            <a href="${backUrl}" style="color:#000;text-decoration:none;"><b>[&lt; Back]</b></a>
+        </div>
+        <div style="padding:8px;text-align:center;">
+            <img src="${imageSrc}" alt="Image" style="max-width:100%;height:auto;">
+        </div>
+        </body></html>`);
     } catch (e) {
         if (isNotReadyError(e)) return res.send(loadingPage(req, e.message));
         console.error(e);

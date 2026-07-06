@@ -19,6 +19,12 @@ const escapeHtml = (value) => String(value || '')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+const isArchivedChat = (chat) => chat && (
+    chat.archived === true
+    || chat.isArchived === true
+    || (chat._data && chat._data.archived === true)
+);
+
 const loadingPage = (req, message) => {
     const tp = tokenParam(req);
     return `<html><head>
@@ -59,7 +65,7 @@ router.get('/', checkAuth, async (req, res) => {
         <div style="background:#25D366;color:#000;padding:5px;"><b>WhatsApp</b></div>
         <table width="100%" border="0" cellspacing="0" cellpadding="8">`;
 
-        chats.slice(0, CHAT_LIST_LIMIT).forEach(chat => {
+        chats.filter(chat => !isArchivedChat(chat)).slice(0, CHAT_LIST_LIMIT).forEach(chat => {
             const hasUnread = chat.unreadCount > 0;
             const titleColor = hasUnread ? '#25D366' : '#ffffff';
             const unreadText = hasUnread ? ` <b>(${chat.unreadCount})</b>` : '';
